@@ -1,5 +1,5 @@
-# solr 実験リポジトリ
-solr に関して行った実験用のコードとデータを保存しているリポジトリです。
+# solr suggest 実験環境
+solr のsuggest 実験用のコードとデータを保存しています。
 
 ## License
 MIT
@@ -8,7 +8,7 @@ MIT
 
 ### 1. リポジトリを取得
 ```
-git clone https://github.com/ft28/practice_solr
+git clone https://github.com/ft28/practice
 ```
 ### 2. docker コンテナでマウントするディレクトリを作成
 ```
@@ -26,6 +26,7 @@ export GROUP_NAME=`id -ng`
 ```
 ### 4.コンテナ作成＋起動
 ```
+cd practice/solr/suggest
 docker-compose build
 docker-compose up
 ```

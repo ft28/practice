@@ -1,5 +1,5 @@
-# elasticsearch 実験リポジトリ
-Elasticsearch に関する実験用のコードとデータを保存しているリポジトリです。
+# elasticsearch suggest 実験環境
+Elasticsearch のsuggest 実験コードとデータです。
 
 ## License
 MIT
@@ -14,7 +14,7 @@ MIT
 
 ### 1. リポジトリを取得
 ```
-git clone https://github.com/ft28/practice_es
+git clone https://github.com/ft28/practice
 ```
 
 ### 2. docker コンテナでマウントするディレクトリを作成
@@ -25,6 +25,7 @@ mkdir -p ~/mount_docker/log/elasticsearch
 
 ### 3.コンテナ作成＋起動
 ```
+cd practice/es/suggest
 docker-compose build
 docker-compose up
 ```
