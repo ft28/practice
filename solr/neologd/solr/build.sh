@@ -55,7 +55,7 @@ if [ "$dict_path" == "" ] || [ ! -e $dict_path ] ; then
   echo "mecab-ipadic-neologd"
   cd ../../mecab-ipadic-neologd
   ./bin/install-mecab-ipadic-neologd -n -y \
-  --max_baseform_length 15 
+  --max_baseform_length 15  \
   --ignore_noun_ortho
 
   cd $build_dir
