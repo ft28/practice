@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  jdk:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        user_id:    ${USER_ID}
+        user_name:  ${USER_NAME}
+        group_id:   ${GROUP_ID}
+        group_name: ${GROUP_NAME}
+    volumes:
+       - "./solr:/opt/solr"

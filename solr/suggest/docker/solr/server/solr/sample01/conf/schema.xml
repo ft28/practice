@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<schema name="suggest" version="1.6">
+  <fields>
+    <field name="id"        type="string"   indexed="true"  stored="true"  multiValued="false" required="true" />
+    <field name="keyword"   type="text_ja"  indexed="true"  stored="true"  multiValued="false" required="true" />
+    <field name="context"   type="int"      indexed="true"  stored="true"  multiValued="false" required="true" />
+    <field name="weight"    type="int"      indexed="true"  stored="true"  multiValued="false" required="true" />
+    <field name="payload"   type="text_ja"  indexed="true"  stored="true"  multiValued="false" required="true" />
+    <field name="_version_" type="long"     indexed="true"  stored="true"/>
+  </fields>
+
+  <uniqueKey>id</uniqueKey>
+  
+  <types>
+    <fieldType name="string"  class="solr.StrField"  sortMissingLast="true"/>
+    <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+    <fieldType name="int"     class="solr.IntPointField"  />
+    <fieldType name="long"    class="solr.LongPointField" />
+
+   
+    <!-- テキスト系フィールド -->
+    <!-- -->
+    <fieldType name="text_ja" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="false">
+      <analyzer>
+        <!-- トークン化 -->
+        <tokenizer class="solr.JapaneseTokenizerFactory" mode="normal" />
+        <!-- 全角カナ半角カナの表記ゆれを統一 -->
+        <filter class="solr.CJKWidthFilterFactory"/>
+        <!-- 4文字以上の場合カタカナの末尾の長音を除外 コンピューター -> コンピュータ -->
+        <filter class="solr.JapaneseKatakanaStemFilterFactory" minimumLength="4"/>
+        <filter class="solr.ASCIIFoldingFilterFactory" preserveOriginal="false" />
+        <!-- アルファベットを小文字に統一 -->
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+
+    <!-- テキスト系フィールド -->
+    <fieldType name="text_ja_keyword" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="false">
+      <analyzer>
+        <!-- トークン化 -->
+        <!-- <tokenizer class="solr.KeywordTokenizerFactory"/> -->
+        <tokenizer class="solr.StandardTokenizerFactory"/>
+        <!-- 全角カナ半角カナの表記ゆれを統一 -->
+        <filter class="solr.CJKWidthFilterFactory"/>
+        <!-- アルファベットを小文字に統一 -->
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+
+    <!-- ローマ字読み検索用1 -->
+    <fieldType name="text_ja_roman1" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="false">
+      <analyzer>
+        <!-- トークン化 -->
+        <tokenizer class="solr.JapaneseTokenizerFactory" mode="normal" />
+        <!-- 全角カナ半角カナの表記ゆれを統一 -->
+        <filter class="solr.CJKWidthFilterFactory"/>
+        <!-- 4文字以上の場合カタカナの末尾の長音を除外 コンピューター -> コンピュータ -->
+        <filter class="solr.JapaneseKatakanaStemFilterFactory" minimumLength="4"/>
+        <!-- トークンをローマ字化 -->
+        <filter class="solr.JapaneseReadingFormFilterFactory" useRomaji="true"/>
+        <!-- 上でローマ字化出来なかったひらがなカタカナをローマ字化 -->
+        <filter class="solr.ICUTransformFilterFactory" id="Katakana-Hiragana"/>
+        <filter class="solr.ICUTransformFilterFactory" id="Katakana-Latin"/>
+        <!-- トークンを結合して新しいトークン作成 -->
+        <filter class="solr.ShingleFilterFactory" minShingleSize="2" maxShingleSize="100" outputUnigramsIfNoShingles="true" tokenSeparator=""/>
+        <!-- tōkyō -> tokyo -->
+        <filter class="solr.ASCIIFoldingFilterFactory" preserveOriginal="false" />
+        <!-- アルファベットを小文字に統一 -->
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+
+    <!-- ローマ字読み検索用2 -->
+    <fieldType name="text_ja_roman2" class="solr.TextField" positionIncrementGap="100" autoGeneratePhraseQueries="false">
+      <analyzer type="index">
+        <!-- トークン化 -->
+        <tokenizer class="solr.JapaneseTokenizerFactory" mode="normal" />
+        <!-- 全角カナ半角カナの表記ゆれを統一 -->
+        <filter class="solr.CJKWidthFilterFactory"/>
+        <!-- オリジナルのフィルタ -->
+        <filter class="org.apache.lucene.analysis.ja.ConcatenateJapaneseReadingFilterFactory" mode="2" />
+        <!-- アルファベットを小文字に統一 -->
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+      <analyzer type="query">
+        <!-- トークン化 -->
+        <tokenizer class="solr.JapaneseTokenizerFactory" mode="normal" />
+        <!-- 全角カナ半角カナの表記ゆれを統一 -->
+        <filter class="solr.CJKWidthFilterFactory"/>
+        <!-- オリジナルのフィルタ -->
+        <filter class="org.apache.lucene.analysis.ja.ConcatenateJapaneseReadingFilterFactory" mode="1" />
+        <!-- アルファベットを小文字に統一 -->
+        <filter class="solr.LowerCaseFilterFactory"/>
+      </analyzer>
+    </fieldType>
+  </types>
+</schema>

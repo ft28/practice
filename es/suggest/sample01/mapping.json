@@ -1,0 +1,93 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "default_index_analyzer": {
+          "type": "custom",
+          "tokenizer": "keyword",
+           "filter": [
+              "engram"
+           ]
+        },
+        "default_search_analyzer": {
+          "type": "custom",
+          "tokenizer": "keyword"
+        },
+        "roman1_index_analyzer": {
+           "type": "custom",
+           "tokenizer": "japanese_tokenizer",
+           "filter": [
+             "roman_reading1",
+             "engram"
+           ]
+        },
+        "roman1_search_analyzer": {
+           "type": "custom",
+           "tokenizer": "japanese_tokenizer",
+           "filter": [
+             "roman_reading1"
+           ]
+        },
+        "roman2_index_analyzer": {
+           "type": "custom",
+           "tokenizer": "japanese_tokenizer",
+           "filter": [
+             "roman_reading2",
+             "engram"
+           ]
+        },
+        "roman2_search_analyzer": {
+           "type": "custom",
+           "tokenizer": "japanese_tokenizer",
+           "filter": [
+             "roman_reading2"
+           ]
+        }
+      },
+      "tokenizer": {
+         "japanese_tokenizer": {
+           "type": "kuromoji_tokenizer",
+           "mode": "normal" 
+         }
+      },
+      "filter": {
+        "roman_reading1": {
+          "type": "kuromoji_readingform",
+          "use_romaji": true
+        },
+        "roman_reading2": {
+          "type": "kuromoji_concat_japanese",
+          "mode": 1
+        },
+        "engram": {
+           "type": "edgeNGram",
+           "min_gram": 1,
+           "max_gram": 36
+        }
+      }
+    }
+  },
+  "mappings": {
+    "keyword": {
+      "properties": {
+        "word": {
+          "type": "text",
+          "analyzer": "default_index_analyzer",
+          "search_analyzer": "default_search_analyzer",
+          "fields": {
+             "roman1": {
+               "type": "text",
+               "analyzer": "roman1_index_analyzer",
+               "search_analyzer": "roman1_search_analyzer"
+             },
+             "roman2": {
+               "type": "text",
+               "analyzer": "roman2_index_analyzer",
+               "search_analyzer": "roman2_search_analyzer"
+             }
+          }
+        }
+      }
+    }
+  }
+}

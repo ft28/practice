@@ -1,0 +1,32 @@
+# インデックス作成
+curl -XPUT http://localhost:9200/suggest -d @mapping.json -H 'Content-Type: application/json'
+
+# インデックス作成確認
+curl -XGET http://localhost:9200/_aliases?pretty
+
+# インデックス削除
+curl -XDELETE http://localhost:9200/suggest
+
+# データ投入
+curl -XPOST http://localhost:9200/suggest/keyword/_bulk?pretty --data-binary @blk.json -H 'Content-Type: application/json'
+
+# データ登録件数カウント
+curl -XGET 'http://localhost:9200/_cat/count/suggest'
+
+# analyzerの確認
+curl -XGET 'localhost:9200/suggest/_analyze?pretty' -d '{"analyzer": "roman1_search_analyzer", "text": "しながわ"}' -H 'Content-Type: application/json'
+
+
+# 検索
+curl -XGET http://localhost:9200/suggest/keyword/_search?pretty -H 'Content-Type: application/json' -d '
+{
+   "query": {
+     "match": { 
+       "word.roman1": {
+          "query": "しながわ",
+          "operator": "AND"
+       }
+     }
+   }
+ }'
+

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>suggest test</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="./suggest.css">
+  <body>
+    <h1>サジェストチェック</h1>
+    <div><input id="input" type="text"></input></div>
+
+    <div id="results">
+      <div class="result">
+        <div class="header">タイプ1</div>
+        <ul id="test1"></ul>
+      </div>
+      <div class="result">
+        <div class="header">タイプ2</div>
+        <ul id="test2"></ul>
+      </div>
+      <div class="result">
+        <div class="header">タイプ3</div>
+        <ul id="test3"></ul>
+      </div>
+      <div class="result">
+        <div class="header">タイプ4</div>
+        <ul id="test4"></ul>
+      </div>
+    </div>
+
+    <div style="clear:both"></div>
+    <h3>タイプ1</h3>
+    <ul> 
+      <li>辞書指定のないクエリです。</li>
+      <li>/solr/sample01/suggest?wt=json&amp;suggest=true&amp;suggest.count=5&amp;sugget.q=[query]</li>
+      <li>設定ファイルの先頭にあるdefault辞書だけを使って結果を返します。</li>
+      <li>payloadカラムに収納したデータを結果として表示します。</li>
+    </ul>
+
+    </ul>
+    <h3>タイプ2</h3>
+    <ul> 
+      <li>default辞書とroman1辞書を指定するクエリです。</li>
+      <li>/solr/sample01/suggest?wt=json&amp;suggest=true&amp;suggest.count=5&amp;suggest.dictionary=default&amp;suggest.dictionary=roman1&amp;suggest.q=[query]</li>
+      <li>default辞書とroma1辞書の複数を使って結果を返します。</li>
+      <li>両方の辞書でヒットする場合、同じレコードが2つ結果として同じレコードが複数返ってきます。</li>
+    </ul>
+
+    <h3>タイプ3</h3>
+    <ul> 
+      <li>タイプ2に山手線(=1)制約を追加したクエリです。</li>
+      <li>/solr/sample01/suggest?wt=json&amp;suggest=true&amp;suggest.count=5&amp;suggest.dictionary=default&amp;suggest.dictionary=roman1&amp;suggest.cfq=1&amp;suggest.q=[query]</li>
+      <li>タイプ2の結果をフィルタリングして山手線のものだけが返ってきます。</li>
+    </ul>
+    <h3>タイプ4</h3>
+    <ul> 
+      <li>default辞書とroman2辞書を指定するクエリです。</li>
+      <li>/solr/sample01/suggest?wt=json&amp;suggest=true&amp;suggest.count=5&amp;suggest.dictionary=default&amp;suggest.dictionary=roman2&amp;suggest.q=[query]</li>
+      <li>roma2辞書では、「しながわ」のようなクエリでもヒットします。</li>
+      <li>roma2辞書では、「shin」でも、「sin」でもでもヒットします。</li>
+    </ul>
+    <script src="suggest.js"></script>
+  </body>
+</html>

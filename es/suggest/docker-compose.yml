@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  es:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+       - "${HOME}/mount_docker/data/elasticsearch/:/opt/elasticsearch/data"
+       - "${HOME}/mount_docker/log/elasticsearch:/opt/elasticsearch/logs"
+    networks:
+      - develop_nw
+networks:
+  develop_nw:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24

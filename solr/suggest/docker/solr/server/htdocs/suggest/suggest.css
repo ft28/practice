@@ -1,0 +1,44 @@
+body {
+  margin-right: auto;
+  margin-left : auto;
+  width: 1000px;
+}
+
+input {
+    width: 600px;
+    margin-bottom: 10px;
+}
+
+div.result {
+   float: left;
+}
+
+div.header {
+   background-color: #cccccc;
+   font-weight: bold;
+   border-left: 1px solid #000000;
+   border-top: 1px solid #000000;
+   border-bottom: 1px solid #000000;
+   padding: 5px;
+}
+
+div.header :last-child {
+   border-right: 1px solid #000000;
+}
+
+div.result ul {
+    padding: 0;
+    margin: 0;
+    width: 200px;
+}
+
+div.result li {
+    list-style: none;
+    border-top:1px solid #cccccc;
+    border-left:1px solid #cccccc;
+    border-right:1px solid #cccccc;
+}
+
+div.result li:last-child {
+    border-bottom:1px solid #cccccc;
+}

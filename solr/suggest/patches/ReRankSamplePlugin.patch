@@ -1,0 +1,331 @@
+diff --git a/solr/contrib/sample/build.xml b/solr/contrib/sample/build.xml
+new file mode 100644
+index 0000000..734f92a
+--- /dev/null
++++ b/solr/contrib/sample/build.xml
+@@ -0,0 +1,35 @@
++<?xml version="1.0"?>
++
++<!--
++    Licensed to the Apache Software Foundation (ASF) under one or more
++    contributor license agreements.  See the NOTICE file distributed with
++    this work for additional information regarding copyright ownership.
++    The ASF licenses this file to You under the Apache License, Version 2.0
++    the "License"); you may not use this file except in compliance with
++    the License.  You may obtain a copy of the License at
++
++        http://www.apache.org/licenses/LICENSE-2.0
++
++    Unless required by applicable law or agreed to in writing, software
++    distributed under the License is distributed on an "AS IS" BASIS,
++    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++    See the License for the specific language governing permissions and
++    limitations under the License.
++ -->
++
++<project name="solr-rerank-sample" default="default">
++
++  <description>
++    Learning to Sample Rank Package
++  </description>
++
++  <import file="../contrib-build.xml"/>
++
++  <path id="test.classpath">
++    <path refid="solr.test.base.classpath"/>
++    <fileset dir="${test.lib.dir}" includes="*.jar"/>
++  </path>
++
++  <target name="compile-core" depends=" solr-contrib-build.compile-core"/>
++
++</project>
+diff --git a/solr/contrib/sample/ivy.xml b/solr/contrib/sample/ivy.xml
+new file mode 100644
+index 0000000..3b7e1c7
+--- /dev/null
++++ b/solr/contrib/sample/ivy.xml
+@@ -0,0 +1,33 @@
++<!--
++   Licensed to the Apache Software Foundation (ASF) under one
++   or more contributor license agreements.  See the NOTICE file
++   distributed with this work for additional information
++   regarding copyright ownership.  The ASF licenses this file
++   to you under the Apache License, Version 2.0 (the
++   "License"); you may not use this file except in compliance
++   with the License.  You may obtain a copy of the License at
++
++     http://www.apache.org/licenses/LICENSE-2.0
++
++   Unless required by applicable law or agreed to in writing,
++   software distributed under the License is distributed on an
++   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++   KIND, either express or implied.  See the License for the
++   specific language governing permissions and limitations
++   under the License.
++-->
++<ivy-module version="2.0">
++  <info organisation="org.apache.solr" module="ltr"/>
++    <configurations defaultconfmapping="compile->master;test->master">
++      <conf name="compile" transitive="false"/> <!-- keep unused 'compile' configuration to allow build to succeed -->
++      <conf name="test" transitive="false"/>
++    </configurations>
++
++   <dependencies>
++     <dependency org="org.slf4j" name="jcl-over-slf4j" rev="${/org.slf4j/jcl-over-slf4j}" conf="test"/>
++     <dependency org="org.mockito" name="mockito-core" rev="${/org.mockito/mockito-core}" conf="test"/>
++     <dependency org="net.bytebuddy" name="byte-buddy" rev="${/net.bytebuddy/byte-buddy}" conf="test"/>
++     <dependency org="org.objenesis" name="objenesis" rev="${/org.objenesis/objenesis}" conf="test"/>
++     <exclude org="*" ext="*" matcher="regexp" type="${ivy.exclude.types}"/>
++   </dependencies>
++</ivy-module>
+diff --git a/solr/contrib/sample/src/java/org/apache/solr/sample/SampleReRankQParserPlugin.java b/solr/contrib/sample/src/java/org/apache/solr/sample/SampleReRankQParserPlugin.java
+new file mode 100644
+index 0000000..7dc9ce5
+--- /dev/null
++++ b/solr/contrib/sample/src/java/org/apache/solr/sample/SampleReRankQParserPlugin.java
+@@ -0,0 +1,103 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.solr.search;
++
++import java.io.IOException;
++
++import org.apache.lucene.search.MatchAllDocsQuery;
++import org.apache.lucene.search.Query;
++
++import org.apache.lucene.search.SampleRescorer;
++
++import org.apache.solr.common.SolrException;
++import org.apache.solr.common.params.SolrParams;
++import org.apache.solr.request.SolrQueryRequest;
++
++/*
++*
++*  Syntax: q=*:*&rq={!sample reRankDocs=300 reRankModulo=3}
++* 
++*/
++
++public class SampleReRankQParserPlugin extends QParserPlugin {
++
++  public static final String NAME = "sample";
++  private static Query defaultQuery = new MatchAllDocsQuery();
++
++  public static final String RERANK_DOCS = "reRankDocs";
++  public static final int RERANK_DOCS_DEFAULT = 200;
++  public static final String RERANK_MODULO = "reRankModulo";
++  public static final int RERANK_MODULO_DEFAULT = 3;    
++    
++  public QParser createParser(String query, SolrParams localParams, SolrParams params, SolrQueryRequest req) {
++    return new SampleReRankQParser(query, localParams, params, req);
++  }
++
++  private class SampleReRankQParser extends QParser  {
++
++    public SampleReRankQParser(String query, SolrParams localParams, SolrParams params, SolrQueryRequest req) {
++      super(query, localParams, params, req);
++    }
++
++    public Query parse() throws SyntaxError {
++      int reRankDocs  = localParams.getInt(RERANK_DOCS, RERANK_DOCS_DEFAULT);
++      reRankDocs = Math.max(1, reRankDocs);
++
++      int reRankModulo = localParams.getInt(RERANK_MODULO, RERANK_MODULO_DEFAULT);
++      reRankModulo = Math.max(1, reRankModulo);
++      return new SampleReRankQuery(defaultQuery, reRankDocs, reRankModulo);
++    }
++  }
++
++  private final class SampleReRankQuery extends AbstractReRankQuery {
++    final private int reRankModulo;
++
++    public int hashCode() {
++      return 31 * classHash() + mainQuery.hashCode() + reRankDocs + reRankModulo;
++    }
++
++    public boolean equals(Object other) {
++      return sameClassAs(other) &&
++             equalsTo(getClass().cast(other));
++    }
++
++    private boolean equalsTo(SampleReRankQuery rrq) {
++      return mainQuery.equals(rrq.mainQuery) &&
++        reRankDocs == rrq.reRankDocs &&
++        reRankModulo == rrq.reRankModulo;     
++    }
++
++    public SampleReRankQuery(Query query , int reRankDocs, int reRankModulo) {
++      super(query, reRankDocs, new SampleRescorer(reRankModulo));
++      this.reRankModulo = reRankModulo;
++    }
++
++    @Override
++    public String toString(String s) {
++      final StringBuilder sb = new StringBuilder(100); // default initialCapacity of 16 won't be enough
++      sb.append("{!").append(NAME);
++      sb.append(" mainQuery='").append(mainQuery.toString()).append("' ");
++      sb.append(RERANK_DOCS).append('=').append(reRankDocs).append(' ');
++      sb.append(RERANK_MODULO).append('=').append(reRankModulo).append(' ');      
++      return sb.toString();
++    }
++
++    protected Query rewrite(Query rewrittenMainQuery) throws IOException {
++      return new SampleReRankQuery(defaultQuery, reRankDocs, reRankModulo).wrap(rewrittenMainQuery);
++    }
++  }
++}
+diff --git a/solr/contrib/sample/src/java/org/apache/solr/sample/SampleRescorer.java b/solr/contrib/sample/src/java/org/apache/solr/sample/SampleRescorer.java
+new file mode 100644
+index 0000000..1c0f55d
+--- /dev/null
++++ b/solr/contrib/sample/src/java/org/apache/solr/sample/SampleRescorer.java
+@@ -0,0 +1,136 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.lucene.search;
++
++
++import java.io.IOException;
++import java.lang.invoke.MethodHandles;
++import java.util.Arrays;
++import java.util.Comparator;
++import java.util.Set;
++import java.util.HashSet;
++import java.util.Collections;
++import java.util.List;
++import java.util.Locale;
++
++import org.apache.lucene.index.LeafReaderContext;
++import org.apache.lucene.document.Document;
++import org.apache.lucene.index.IndexableField;
++
++import org.apache.lucene.search.IndexSearcher;
++import org.apache.lucene.search.TopDocs;
++import org.apache.lucene.search.ScoreDoc;
++
++import org.apache.lucene.search.SampleRescorer;
++
++/** A {@link SampleRescorer}
++ */
++public class SampleRescorer extends Rescorer {
++  private int modulo;
++    
++  public SampleRescorer(int modulo) {
++      this.modulo = modulo;
++  }
++
++  @Override
++  public TopDocs rescore(IndexSearcher searcher, TopDocs firstPassTopDocs, int topN) throws IOException {
++    
++    //   ReRankCollector のL103で呼び出される関数
++    final String fieldWeight = "weight";
++    final String fieldId = "id";
++    final Set<String> fieldAsSet  = new HashSet<String>(Arrays.asList(fieldId, fieldWeight));
++
++    final float maxFirstScore = firstPassTopDocs.getMaxScore();
++
++    // 最初のクエリでヒットしたtopN件だけを再計算対象に設定
++    ScoreDoc[] subset = new ScoreDoc[topN];
++    System.arraycopy(firstPassTopDocs.scoreDocs, 0, subset, 0, topN);
++
++    // docID 順に並べ替え　　      
++    Arrays.sort(subset,
++                new Comparator<ScoreDoc>() {
++                  @Override
++                  public int compare(ScoreDoc a, ScoreDoc b) {
++                    return a.doc - b.doc;
++                  }
++                });
++
++    List<LeafReaderContext> leaves = searcher.getIndexReader().leaves();
++
++    int subsetUpto = 0;
++    int readerUpto = -1;
++    int endDoc = 0;
++    int docBase = 0;
++
++    LeafReaderContext readerContext = null;
++
++    while (subsetUpto < subset.length) {
++      ScoreDoc scoreDoc = subset[subsetUpto];
++      int docID = scoreDoc.doc;
++
++      while (docID >= endDoc) {
++        readerUpto++;
++        readerContext = leaves.get(readerUpto);
++        endDoc = readerContext.docBase + readerContext.reader().maxDoc();
++      }
++
++      int targetDoc = docID - readerContext.docBase;
++
++      // フィルド値からscore となる値を計算
++      final Document document = readerContext.reader().document(targetDoc, fieldAsSet);
++      IndexableField indexableField = document.getField(fieldId);
++      int id = Integer.parseInt(indexableField.stringValue());
++
++      // 条件に合致するときだけスコアを更新
++      if ((id % modulo) == 0) {
++        indexableField = document.getField(fieldWeight);
++        scoreDoc.score = maxFirstScore + indexableField.numericValue().floatValue();
++      }
++      subsetUpto++;
++    }
++
++    Arrays.sort(subset,
++                new Comparator<ScoreDoc>() {
++                  @Override
++                  public int compare(ScoreDoc a, ScoreDoc b) {
++                    // Sort by score descending, then docID ascending:
++                    if (a.score > b.score) {
++                      return -1;
++                    } else if (a.score < b.score) {
++                      return 1;
++                    } else {
++                      // This subtraction can't overflow int
++                      // because docIDs are >= 0:
++                      return a.doc - b.doc;
++                    }
++                  }
++                });
++
++    return new TopDocs(subset.length, subset, subset[0].score);
++  }
++    
++  @Override
++  public Explanation explain(IndexSearcher searcher, Explanation firstPassExplanation, int docID) throws IOException {
++    TopDocs oneHit = new TopDocs(1, new ScoreDoc[] {new ScoreDoc(docID, firstPassExplanation.getValue())});
++    TopDocs hits = rescore(searcher, oneHit, 1);
++
++    Explanation first = Explanation.match(firstPassExplanation.getValue(), "first pass score", firstPassExplanation);
++    Explanation second = Explanation.match(hits.scoreDocs[0].score, "second pass score");
++
++    return Explanation.match(hits.scoreDocs[0].score, "combined first and second pass score using " + getClass(), first, second);
++  }
++}
